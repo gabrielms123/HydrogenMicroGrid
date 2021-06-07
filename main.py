@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import equipment
 from tqdm import tqdm
-import datetime
+from datetime import datetime
 
 
 ''' Not used yet
@@ -102,9 +102,20 @@ columns_to_be_added = ['Hour',
 for column_name in columns_to_be_added:
     df_main = initialize_column(df_main, column_name)
 
-df_main['Hour'] = (df_main['Hour end'].str[:2])  # Not sure yet if this is type int
-pd.to_numeric(df_main['Hour'])
-df_main['Minutes'] = df_main['Hour end'].str[3:]
+# df_main['Hour'] = (df_main['Hour end'].str[:2])  # Not sure yet if this is type int
+# pd.to_numeric(df_main['Hour'])
+# df_main['Minutes'] = df_main['Hour end'].str[3:]
+
+
+def create_date(row):
+    day = int(row['Day'])
+    month = int(row['Month'])
+    time = str(row['Hour end'])
+    date_str = f'2020-{month:02d}-{day:02d} {time}'
+    datetime_object = datetime.strptime(date_str, '%Y-%m-%d %H:%M')
+    return datetime_object
+
+df_main['time'] = df_main.apply(create_date, axis=1)
 
 
 for i, row in tqdm(df_main.iterrows(), total=df_main.shape[0]):
