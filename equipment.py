@@ -1,13 +1,9 @@
-# TODO 0. <HALF DONE> Create an hour column. Can be the left 2 caracters of the "Hour end" column
-# TODO 2. <DONE> Create a DOH Column
-# TODO 1. Make a grid function that will produce hydrogen according to the energy needed
-#  if stock < a certain level, produce while the hours are between 22 and 6.
+
 # TODO 3. Make a forecast column: It will sum the next 672 rows (7 days * 24 hours * 4 quarter of hour) of solar
-#  irradiation
-# TODO 4. Once it's reaching the end, make it use the data from January ("next year")
+#  irradiation. Once it's reaching the end, make it use the data from January ("next year")
 # TODO 5. Calculate the amount of hydrogen that will be produced in the next 30 days.
-# TODO 6. If DOH < 7, use grid?
-# TODO 7.
+# TODO 6. Compressor consumption for hydrogen from the grid
+# TODO 7. Electrolyzers can be turned off only 5 times a day
 
 
 class PvArray(object):
@@ -36,10 +32,11 @@ class PvArray(object):
 
 class Compressor(object):
 
-    def __init__(self, max_flow: float, max_power_consumption: float):
+    def __init__(self, max_flow: float, max_power_consumption: float, avg_consumption: float):
         super().__init__()
         self.max_flow = max_flow
         self.max_power_consumption = max_power_consumption
+        self.avg_consumption = avg_consumption
 
     def power_consumption(self, h2_in: float) -> float:
         """ Calculates the power consumption of a compressor for a 15 minutes interval, according to its rated maximum
@@ -56,7 +53,8 @@ class Compressor(object):
         if h2_in > 0:
             h2_day = h2_in * 4 * 24  # From kg/15' to kg/day
             utilization = h2_day / self.max_flow
-            compressor_power = (utilization * self.max_power_consumption / 4) * h2_in  # the /4 is for Wh in 15'
+        #    compressor_power = (utilization * self.max_power_consumption / 4) * h2_in  # the /4 is for Wh in 15'
+            compressor_power = h2_in * self.avg_consumption
         return compressor_power
 
 
@@ -140,6 +138,9 @@ class FuelCell(object):
         self.FC_efficiency = FC_efficiency
 
     def h2_consumption(self, P_needed: float) -> float:
-        """ This method will define how much hydrogen is consumed by the fuel cell in kg."""
-        h2_cons = P_needed * self.fuel_consumption
+        """ This method will define how much hydrogen is consumed by the fuel cell in kg.
+            P_needed has to be entered in Wh.
+            Check if the parameter defined for Fuel Consumption is at g/Wh
+        """
+        h2_cons = P_needed * self.fuel_consumption/1000
         return h2_cons
