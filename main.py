@@ -26,9 +26,9 @@ pv_panel = equipment.PvArray(**pv_panels_kwargs)
 # Electrolyzer definition
 ''' Here I'm just copying the technique used by Sebastian'''
 electrolyzer_kwargs = {
-    'electrical_consumption': 4800,  # Wh/Nm3
+    'electrical_consumption': 4_800,  # Wh/Nm3
     'PE_efficiency': 0.98,  # %
-    'installed_capacity': 80_000  # W  How could I do like several simulations for different installed capacities at
+    'installed_capacity': 50_000  # W  How could I do like several simulations for different installed capacities at
     # once, to compare them?
     # I am oversizing the installed capacity to make sure we reach our load.
 }
@@ -123,7 +123,7 @@ storage_target = DOH_target * avg_hydrogen_consumption  # In kg. (days * (kg/day
 initial_storage = 150  # kg
 # H2_storage = [initial_storage]
 
-for i, row in tqdm(df_main.head(20_000).iterrows()):  # , total=df_main.shape[0]
+for i, row in tqdm(df_main.head(20_000).iterrows(), total=df_main.shape[0]):  #
     # unpacking row
     PV_gen, load, lab_H2_load = row['PV_Gen Wh'], row['Load [Wh]'], row['H2_load [kg]']
     hour = row['time'].hour
@@ -143,10 +143,6 @@ for i, row in tqdm(df_main.head(20_000).iterrows()):  # , total=df_main.shape[0]
 
     # 1st step: fulfill the load with PV when available.
 
-    if i > 11:
-        a = 1
-    else:
-        pass
     H2_show_room = 0
     if PV_gen > total_load:  # produce hydrogen
         # Electrolyzer calculations

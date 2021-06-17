@@ -129,6 +129,7 @@ class FuelCell(object):
     > Degradation
     > Voltage and Current
     > Temperature profile
+    > Available Fuel Cell energy back to the grid (Create a column just to know how much I'd have available)
 
     """
 
