@@ -1,4 +1,4 @@
-
+import math
 # TODO 3. Make a forecast column: It will sum the next 672 rows (7 days * 24 hours * 4 quarter of hour) of solar
 #  irradiation. Once it's reaching the end, make it use the data from January ("next year")
 # TODO 5. Calculate the amount of hydrogen that will be produced in the next 30 days.
@@ -70,11 +70,14 @@ class Electrolyzer(object):
     > Degradation
     """
 
-    def __init__(self, electrical_consumption: float, PE_efficiency: float, installed_capacity: int):
+    def __init__(self, electrical_consumption: float, PE_efficiency: float, installed_capacity: int, unit_capacity: int,
+                 number_electrolyzer: int):
         super().__init__()
         self.electrical_consumption = electrical_consumption
         self.PE_efficiency = PE_efficiency
         self.installed_capacity = installed_capacity
+        self.unit_capacity = unit_capacity
+        self.number_electrolyzer = installed_capacity / unit_capacity
 
     def power_consumption(self, P_in: float) -> float:
         # Probably this is not doing anything for now. I will calculate this efficiency in the other methods as well.
