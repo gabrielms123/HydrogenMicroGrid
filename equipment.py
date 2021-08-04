@@ -1,4 +1,6 @@
 import math
+
+
 # TODO 3. Make a forecast column: It will sum the next 672 rows (7 days * 24 hours * 4 quarter of hour) of solar
 #  irradiation. Once it's reaching the end, make it use the data from January ("next year")
 # TODO 5. Calculate the amount of hydrogen that will be produced in the next 30 days.
@@ -32,11 +34,34 @@ class PvArray(object):
 
 class Compressor(object):
 
-    def __init__(self, max_flow: float, max_power_consumption: float, avg_consumption: float):
+    def __init__(self, max_flow: float, max_power_consumption: float, avg_consumption: float, ip_efficiency: float,
+                 m_efficiency: float, e_efficiency: float):
         super().__init__()
         self.max_flow = max_flow
         self.max_power_consumption = max_power_consumption
         self.avg_consumption = avg_consumption
+        self.ip_efficiency = ip_efficiency
+        self.m_efficiency = m_efficiency
+        self.e_efficiency = e_efficiency
+
+    def compressor_energy(self, p_in, p_out, temp_in, m_h2):
+        """This equation is for the ideal condition where
+        k (1.4) is the ratio of the specific heats (cp and cv),
+        RH2 is the hydrogen gas constant (4.12 kJ/kg K),
+        Tin (K) is the hydrogen inlet temperature (25 ?C)
+        p_in and p_out are the inlet (10 bar) and outlet (400 bar) pressures, respectively
+        ip_efficiency is the isentropic efficiency
+        m_efficiency is the mechanical efficiency
+        e_efficiency is the electrical efficiency
+        P_compressor is the electrical power required by the compressor
+         """
+        k = 1.4
+        R_h2 = 4.12  # kJ/kg/kgK
+        k_ratio = (k / (k - 1))
+        total_efficiency = self.ip_efficiency * self.m_efficiency * self.e_efficiency
+        L_isc = k_ratio * R_h2 * temp_in * (((p_out / p_in) ** k_ratio) - 1)/1000  # kJ/g to kJ/kg
+        E_compressor = m_h2 * L_isc / total_efficiency * 1000 / (15*60)  # kJ to Wh
+        return E_compressor
 
     def power_consumption(self, h2_in: float) -> float:
         """ Calculates the power consumption of a compressor for a 15 minutes interval, according to its rated maximum
@@ -53,7 +78,7 @@ class Compressor(object):
         if h2_in > 0:
             h2_day = h2_in * 4 * 24  # From kg/15' to kg/day
             utilization = h2_day / self.max_flow
-        #    compressor_power = (utilization * self.max_power_consumption / 4) * h2_in  # the /4 is for Wh in 15'
+            #    compressor_power = (utilization * self.max_power_consumption / 4) * h2_in  # the /4 is for Wh in 15'
             compressor_power = h2_in * self.avg_consumption
         return compressor_power
 
@@ -71,13 +96,16 @@ class Electrolyzer(object):
     """
 
     def __init__(self, electrical_consumption: float, PE_efficiency: float, installed_capacity: int, unit_capacity: int,
-                 number_electrolyzer: int):
+                 number_electrolyzer: int, temp_out: int, p_out: int, water_consumption: float):
         super().__init__()
         self.electrical_consumption = electrical_consumption
         self.PE_efficiency = PE_efficiency
         self.installed_capacity = installed_capacity
         self.unit_capacity = unit_capacity
         self.number_electrolyzer = installed_capacity / unit_capacity
+        self.temp_out = temp_out
+        self.p_out = p_out
+        self.water_consumption = water_consumption
 
     def power_consumption(self, P_in: float) -> float:
         # Probably this is not doing anything for now. I will calculate this efficiency in the other methods as well.
@@ -115,13 +143,38 @@ class Electrolyzer(object):
         else:
             return grid_consumption
 
-    def water_consumption (self, P_in: float):
-        # It's saying this is static. Is it? Why? How?
-        h2_mol = Electrolyzer.h2_production_kg(P_in)/2  # H2 in kmol
-        h2o_mol = h2_mol
-        h2o_wt = h2o_mol * 18  # in kg
-        return h2o_wt
+    def water_consumed(self, h2_produced: float):
+        """ This method calculates the amount of water in Liters that is used to produce a certain amount of hydrogen.
+         Enter h2_produced in kg.
+         """
+        proportional_consumption = self.water_consumption * self.electrical_consumption / self.unit_capacity
+        # (L/h) * (Wh/Nm3) / (W) = L of water per Nm3 of hydrogen
+        h2o_m3 = h2_produced / 0.0898
+        h2o_liters = proportional_consumption * h2o_m3
+        return h2o_liters
 
+
+'''    def switch(self, electrolyzer_on, hour, H2_storage, storage_lower_limit, storage_higher_limit):
+        """
+        This method will return if the electrolyzer should stay on, or be turned off.
+        It takes into consideration the previous status, the hour of day, and the level of hydrogen storage.
+        """
+        if hour <= 6 or hour >= 20:  # If in cheap hours
+            if not electrolyzer_on and H2_storage <= storage_lower_limit:
+                electrolyzer_on = True
+            elif electrolyzer_on and H2_storage <= storage_higher_limit:  # Keep running
+                electrolyzer_on = True
+            else:  # turn off
+                electrolyzer_on = False
+            # to a certain percentage
+        else:
+            if H2_storage < storage_critical_limit and not electrolyzer_on:  # This would be the critical level
+                electrolyzer_on = True
+            else:
+                electrolyzer_on = False
+        
+        return electrolyzer_on
+'''
 
 class FuelCell(object):
     """
@@ -146,5 +199,5 @@ class FuelCell(object):
             P_needed has to be entered in Wh.
             Check if the parameter defined for Fuel Consumption is at g/Wh
         """
-        h2_cons = P_needed * self.fuel_consumption/1000
+        h2_cons = P_needed * self.fuel_consumption / 1000
         return h2_cons
