@@ -164,8 +164,7 @@ columns_to_be_added = ['Hour',
                        'grid_consumption',
                        'H2_restock',
                        'grid purchases',
-                       'water consumption',
-                       'purifier power consumption'
+                       'water consumption'
                        ]
 for column_name in columns_to_be_added:
     df_main = initialize_column(df_main, column_name)

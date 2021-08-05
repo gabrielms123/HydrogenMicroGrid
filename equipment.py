@@ -80,6 +80,7 @@ class Compressor(object):
             utilization = h2_day / self.max_flow
             #    compressor_power = (utilization * self.max_power_consumption / 4) * h2_in  # the /4 is for Wh in 15'
             compressor_power = h2_in * self.avg_consumption
+
         return compressor_power
 
 

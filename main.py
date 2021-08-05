@@ -164,8 +164,7 @@ columns_to_be_added = ['Hour',
                        'grid_consumption',
                        'H2_restock',
                        'grid purchases',
-                       'water consumption',
-                       'purifier power consumption'
+                       'water consumption'
                        ]
 for column_name in columns_to_be_added:
     df_main = initialize_column(df_main, column_name)
@@ -227,15 +226,11 @@ for column_name in columns_techno_economical:
 # #####################################################################################################################
 # ########################################## Hydrogen Storage Parameters ##############################################
 # #####################################################################################################################
-DOH_target = 3  # Days of hydrogen
-DOH_critical = 1
+# DOH_target = 3  # Days of hydrogen
+# DOH_critical = 1
 avg_hydrogen_consumption = 20  # kg/day
-storage_target = DOH_target * avg_hydrogen_consumption  # In kg. (days * (kg/day))
-storage_max_mass = 100  # kg
-storage_initial = 30  # kg
-storage_lower_limit = 0.3 * storage_max_mass
-storage_critical_limit = 0.1 * storage_max_mass
-storage_higher_limit = 0.95 * storage_max_mass
+# storage_target = DOH_target * avg_hydrogen_consumption  # In kg. (days * (kg/day))
+
 # H2_storage = [storage_initial]
 
 # .~.~.~.~.~.~·~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~
@@ -252,10 +247,10 @@ electrolyzer_critical = False
 
 # For the first years: ################################################################################################
 
-# EL_Capacity = 0
-# compressor_capacity = 0
-# storage_capacity = 0
-# FC_capacity = 0
+EL_Capacity = 0
+compressor_capacity = 0
+storage_capacity = 0
+FC_capacity = 0
 
 year = 1
 while year < 4:
@@ -263,11 +258,24 @@ while year < 4:
         total_capacity[item] += phase_capacity[f'P{year}'][item]
         item = total_capacity[item]
 
+    EL_Capacity = total_capacity['EL_Capacity'] * 50_000/9  # the installed capacity was in Nm3 there. Do this better?
+    compressor_capacity = total_capacity['compressor_capacity']  # not used yet, as there's no limit to how much the
+    # compressor can work
+    storage_max_mass = storage_capacity = total_capacity['storage_capacity']  # kg
+
+    storage_initial = 30  # kg
+    storage_lower_limit = 0.3 * storage_max_mass
+    storage_critical_limit = 0.1 * storage_max_mass
+    storage_higher_limit = 0.95 * storage_max_mass
+    FC_capacity = total_capacity['FC_capacity']  # No big impact
+
+    # iteration here *$*$*$*$*
+
+
+    # end of iteration *$*$*$*$*
     year += 1
 
-    # Here the whole iterating rows
-
-    # df_main['columns to do simple operations'] = operation ***
+   # df_main['columns to do simple operations'] = operation ***
 
     # The indicators that change during the first 3 years:
     # df_yearly.at[year - 1, 'hydrogen_cost'] = sum(df_main['column'])
@@ -276,14 +284,8 @@ while year < 4:
     # df_yearly.at[year - 1, 'delivery_cut_off'] = sum(df_basecase['delivery_cut_off'])
 
 
-    year += 1
 
 
-
-    # EL_Capacity = total_capacity['EL_Capacity']
-    # compressor_capacity = total_capacity['compressor_capacity']
-    # storage_capacity = total_capacity['storage_capacity']
-    # FC_capacity = total_capacity['FC_capacity']
 
     # Vai complicar que preciso colocar isso na classe depois.
 
