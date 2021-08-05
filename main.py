@@ -146,8 +146,10 @@ def initialize_column(df, column_name, fill_value: float = 0.0):
 # Add new columns
 columns_to_be_added = ['Hour',
                        'Minutes',
-                       'electrical_load'
+                       'electrical_load',
                        'total_load',
+                       'PV_to_load',
+                       'grid_to_load',
                        'EL_power_PV',
                        'EL_power_grid',
                        'EL_power_total',
@@ -260,6 +262,7 @@ while year < 4:
     for item in total_capacity:
         total_capacity[item] += phase_capacity[f'P{year}'][item]
         item = total_capacity[item]
+
     year += 1
 
     # Here the whole iterating rows
@@ -313,16 +316,19 @@ for i, row in tqdm(df_main.iterrows(), total=df_main.shape[0]):  # .head(20_000)
     if PV_gen > total_load:  # produce hydrogen
         # Electrolyzer calculations
         PV_net = PV_gen - total_load  # I would need these variables to be all in tables
-        RENE_H2 = electrolyzer.h2_production_kg(PV_net)  # in kg
+        H2_show_room = electrolyzer.h2_production_kg(PV_net)  # in kg
+        PV_to_load = total_load
         df_main.at[i, 'EL_power_PV'] = PV_net
-        df_main.at[i, 'EL_H2_prod_PV kg'] = RENE_H2
+        df_main.at[i, 'EL_H2_prod_PV kg'] = H2_show_room
     else:  # consume H2
         # Fuel Cell Calculations
         FC_power = total_load - PV_gen
+        PV_to_load = PV_gen
         H2_show_room = - fuel_cell.h2_consumption(FC_power)  # Overly simplified model
         df_main.at[i, 'FC_Power_Out'] = FC_power  # Writing H2 consumption in the FC column
         df_main.at[i, 'FC_H2_consumption'] = H2_show_room
         PV_net = 0
+    df_main.at[i, 'PV_to_load'] = PV_to_load
 
     # Subtracting the Lab's consumption
     H2_change = H2_show_room - lab_H2_load  # Hydrogen load per 15'
