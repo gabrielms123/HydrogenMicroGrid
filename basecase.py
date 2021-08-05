@@ -241,9 +241,9 @@ df_yearly['levelized_cost'] = df_yearly['operation_cost']/((1+interest_rate)**df
 print("No errors calculating.")
 
 # Writing Excel #######################################################################################################
-df_basecase.to_excel(r'C:\Users\gabri\Repositories\HydrogenMicroGrid\basecase.xlsx', index=False,
+df_basecase.to_excel(r'C:\Users\gabri\Repositories\HydrogenMicroGrid\Results\Base_Case\basecase.xlsx', index=False,
                      sheet_name="basecase_calculations")
-df_yearly.to_excel(r'C:\Users\gabri\Repositories\HydrogenMicroGrid\basecase_yearly.xlsx', index=False,
+df_yearly.to_excel(r'C:\Users\gabri\Repositories\HydrogenMicroGrid\Results\Base_Case\basecase_yearly.xlsx', index=False,
                    sheet_name="yearly_calculations")
 
 # Plotting things to test #############################################################################################
