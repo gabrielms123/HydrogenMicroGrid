@@ -8,6 +8,22 @@ import math
 # TODO 7. Electrolyzers can be turned off only 5 times a day
 
 
+def call_electrolyzer(installed_capacity, electrical_consumption=4800, PE_efficiency=0.98, unit_capacity=2_400,
+                      number_electrolyzer=20, temp_out=50, p_out=50, water_consumption=0.4):
+    electrolyzer_kwargs = {
+        'electrical_consumption': electrical_consumption,  # Wh/Nm3
+        'PE_efficiency': PE_efficiency,  # %
+        'installed_capacity': installed_capacity,
+        'unit_capacity': unit_capacity,  # W
+        'temp_out': temp_out,  # ºC
+        'p_out': p_out,  # bar
+        'number_electrolyzer': number_electrolyzer,
+        'water_consumption': water_consumption  # L/h
+    }
+    electrolyzer = Electrolyzer(**electrolyzer_kwargs)
+    return electrolyzer
+
+
 class PvArray(object):
     """
     PS: Power electronics and tilt efficiency are independent of the model and are defined within the class.
@@ -59,8 +75,8 @@ class Compressor(object):
         R_h2 = 4.12  # kJ/kg/kgK
         k_ratio = (k / (k - 1))
         total_efficiency = self.ip_efficiency * self.m_efficiency * self.e_efficiency
-        L_isc = k_ratio * R_h2 * temp_in * (((p_out / p_in) ** k_ratio) - 1)/1000  # kJ/g to kJ/kg
-        E_compressor = m_h2 * L_isc / total_efficiency * 1000 / (15*60)  # kJ to Wh
+        L_isc = k_ratio * R_h2 * temp_in * (((p_out / p_in) ** k_ratio) - 1) / 1000  # kJ/g to kJ/kg
+        E_compressor = m_h2 * L_isc / total_efficiency * 1000 / (15 * 60)  # kJ to Wh
         return E_compressor
 
     def power_consumption(self, h2_in: float) -> float:
@@ -80,6 +96,7 @@ class Compressor(object):
             utilization = h2_day / self.max_flow
             #    compressor_power = (utilization * self.max_power_consumption / 4) * h2_in  # the /4 is for Wh in 15'
             compressor_power = h2_in * self.avg_consumption
+
         return compressor_power
 
 
@@ -175,6 +192,7 @@ class Electrolyzer(object):
         
         return electrolyzer_on
 '''
+
 
 class FuelCell(object):
     """

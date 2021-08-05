@@ -20,7 +20,7 @@ DATA_PATH = Path.cwd() / 'data'
 # ########################################  Parameters of each phase ##################################################
 phase_capacity = {
     'P1': {
-        'EL_Capacity': 3,  # Nm3/h
+        'EL_capacity': 3,  # Nm3/h
         'compressor_capacity': 29.75,  # Nm3/h
         'storage_capacity': 16.33,  # kg
         'FC_capacity': 4,  # kW
@@ -33,7 +33,7 @@ phase_capacity = {
     },
     'P2': {
         # capacities acquired?
-        'EL_Capacity': 3,  # Nm3/h
+        'EL_capacity': 3,  # Nm3/h
         'compressor_capacity': 0,  # Nm3/h
         'storage_capacity': 16.33,  # kg
         'FC_capacity': 0,  # kW
@@ -46,7 +46,7 @@ phase_capacity = {
     },
     'P3': {
         # capacities acquired?
-        'EL_Capacity': 3,  # Nm3/h
+        'EL_capacity': 3,  # Nm3/h
         'compressor_capacity': 29.75,  # Nm3/h
         'storage_capacity': 0,  # kg
         'FC_capacity': 4,  # kW
@@ -60,7 +60,7 @@ phase_capacity = {
 }
 
 total_capacity = {
-    'EL_Capacity': 0,
+    'EL_capacity': 0,
     'compressor_capacity': 0,
     'storage_capacity': 0,
     'FC_capacity': 0,
@@ -164,8 +164,7 @@ columns_to_be_added = ['Hour',
                        'grid_consumption',
                        'H2_restock',
                        'grid purchases',
-                       'water consumption',
-                       'purifier power consumption'
+                       'water consumption'
                        ]
 for column_name in columns_to_be_added:
     df_main = initialize_column(df_main, column_name)
@@ -252,7 +251,7 @@ electrolyzer_critical = False
 
 # For the first years: ################################################################################################
 
-# EL_Capacity = 0
+# EL_capacity = 0
 # compressor_capacity = 0
 # storage_capacity = 0
 # FC_capacity = 0
@@ -279,7 +278,7 @@ while year < 4:
 
 
 
-    # EL_Capacity = total_capacity['EL_Capacity']
+    # EL_capacity = total_capacity['EL_capacity']
     # compressor_capacity = total_capacity['compressor_capacity']
     # storage_capacity = total_capacity['storage_capacity']
     # FC_capacity = total_capacity['FC_capacity']
@@ -427,7 +426,7 @@ df_main['EL_power_total'] = df_main['EL_power_grid'] + df_main['EL_power_PV']
 
 # ############################################## Writing the Excel ###################################################
 
-df_main.to_excel(r'C:\Users\gabri\Repositories\HydrogenMicroGrid\EL_vs_FC.xlsx', index=False)
+df_main.to_excel(r'C:\Users\gabri\Repositories\HydrogenMicroGrid\Results\EL_vs_FC\EL_vs_FC.xlsx', index=False)
 
 # ################################################# storage plot #####################################################
 fig, ax = plt.subplots(1, 1, figsize=(10, 10))
