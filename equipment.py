@@ -24,6 +24,27 @@ def call_electrolyzer(installed_capacity, electrical_consumption=4800, PE_effici
     return electrolyzer
 
 
+def electrolyzer_switch(electrolyzer_on, electrolyzer_critical, grid_price, H2_storage, hydrogen_tank):
+    if grid_price < 0.2:  # If in cheap hours
+        if not electrolyzer_on and H2_storage <= hydrogen_tank.storage_lower_limit:
+            electrolyzer_on = True
+        elif electrolyzer_on and H2_storage <= hydrogen_tank.storage_higher_limit:  # Keep running
+            electrolyzer_on = True
+        else:  # turn off
+            electrolyzer_on = False
+        # to a certain percentage
+    else:
+        if H2_storage < hydrogen_tank.storage_critical_limit and not electrolyzer_on:  # This is the critical level
+            electrolyzer_on = True
+            electrolyzer_critical = True
+        elif electrolyzer_critical and H2_storage > 2 * hydrogen_tank.storage_lower_limit:
+            electrolyzer_critical = False
+            electrolyzer_on = False
+        else:
+            electrolyzer_on = False
+    return electrolyzer_on, electrolyzer_critical
+
+
 class PvArray(object):
     """
     PS: Power electronics and tilt efficiency are independent of the model and are defined within the class.
@@ -100,6 +121,23 @@ class Compressor(object):
         return compressor_power
 
 
+class HydrogenStorage(object):
+    def __init__(self, p_min, p_max, m_max):
+        super(HydrogenStorage, self).__init__()
+        self.p_min = p_min
+        self.p_max = p_max
+        self.m_max = m_max
+        self.storage_lower_limit = 0.3 * m_max
+        self.storage_critical_limit = 0.1 * m_max
+        self.storage_higher_limit = 0.95 * m_max
+
+    def tank_pressure(self, current_storage: float) -> float:
+        pressure = self.p_min + (current_storage / self.m_max) * (self.p_max - self.p_min)
+        if pressure > self.p_max:
+            pressure = self.p_max
+        return pressure
+
+
 class Electrolyzer(object):
     """
     The electrolyzer equipment will calculate how much hydrogen is produced with a certain amount of power.
@@ -142,21 +180,17 @@ class Electrolyzer(object):
             h2_out_Nm3 = P_in / self.electrical_consumption
         return h2_out_Nm3
 
-    def h2_pressure_out(self):
-        pass
-        # Dunno how to do this yet.
-
-    def grid_hydrogen(self, H2_needed: float):
+    def grid_hydrogen(self, H2_needed: float, power_already_in_use):
         """
         H2 Needed entry should be in kg
         For now there is no start-up time. Hydrogen is magically produced whenever needed. :)
         """
         H2_needed = H2_needed / 0.08988  # kg / (kg/Nm3)
         grid_consumption = H2_needed * self.electrical_consumption  # Nm3 * Wh/Nm3
-        max_production = self.installed_capacity / 4  # Max Wh it can produce in 15'
+        available_power = self.installed_capacity / 4  - power_already_in_use # Max Wh it can produce in 15'
 
-        if grid_consumption > max_production:
-            return max_production
+        if grid_consumption > available_power:
+            return available_power
         else:
             return grid_consumption
 
@@ -169,6 +203,18 @@ class Electrolyzer(object):
         h2o_m3 = h2_produced / 0.0898
         h2o_liters = proportional_consumption * h2o_m3
         return h2o_liters
+
+    def h2_critical(self, H2_storage, critical_level, solar_energy):
+        if H2_storage < critical_level:
+            free_capacity = self.installed_capacity/4 - solar_energy
+            h2_critical = Electrolyzer.grid_hydrogen(self, free_capacity)
+            return h2_critical
+        else:
+            return 0
+
+    def max_capacity_h2(self, PV_net, P_critical, ):
+        """This method makes the EL work at maximum capacity. It discounts the PV and critical level power consumptions
+        from the max capacity, and activates the ELs."""
 
 
 '''    def switch(self, electrolyzer_on, hour, H2_storage, storage_lower_limit, storage_higher_limit):
@@ -209,7 +255,7 @@ class FuelCell(object):
 
     def __init__(self, fuel_consumption: float, FC_efficiency: float):
         super().__init__()
-        self.fuel_consumption = fuel_consumption
+        self.fuel_consumption = fuel_consumption  # g/Wh
         self.FC_efficiency = FC_efficiency
 
     def h2_consumption(self, P_needed: float) -> float:
@@ -219,3 +265,7 @@ class FuelCell(object):
         """
         h2_cons = P_needed * self.fuel_consumption / 1000
         return h2_cons
+
+    def electricity_generation(self, hydrogen_available: float) -> float:
+        e_gen = hydrogen_available * 1000 / self.fuel_consumption
+        return e_gen
